@@ -8,13 +8,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github/mahirjain_10/sse-backend/backend/internal/helpers"
+	"github/mahirjain_10/sse-backend/backend/internal/models"
+	"github/mahirjain_10/sse-backend/backend/internal/sse"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/utils"
+	"github/mahirjain_10/sse-backend/backend/internal/websocket"
+
+	"firebase.google.com/go/v4/messaging"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/helpers"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/models"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/utils"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
 )
 
 func GetCurrentStockPriceAndTime(c *gin.Context, r *gin.Engine, app *types.App) {
@@ -25,7 +28,7 @@ func GetCurrentStockPriceAndTime(c *gin.Context, r *gin.Engine, app *types.App) 
 	if !helpers.BindAndValidateJSON(c, &TTM) {
 		return
 	}
-	latestPrice, currentTime, err := utils.GetCurrentStockPriceAndTime(TTM, stockData)
+	latestPrice, currentTime, err := utils.GetCurrentStockPriceAndTime(TTM.TickerToMonitor)
 	if err != nil {
 		if err.Error() == "failed to fetch stock price, try again" {
 			helpers.SendResponse(c, http.StatusInternalServerError, "Failed to fetch stock price,try again", nil, nil, false)
@@ -109,12 +112,21 @@ func CreateStockAlert(c *gin.Context, r *gin.Engine, app *types.App) {
 		return
 	}
 	log.Printf("acitve status : %t", alertInput.Active)
+
+	fcmToken, err := models.FindFCMTokenUsingUserID(app,alertInput.UserID)
+	if err != nil {
+		log.Printf("Error finding FCM token: %v", err)
+		helpers.SendResponse(c, http.StatusInternalServerError, "Internal server error", nil, nil, false)
+		return
+	}
 	// Save alert data in Redis
 	alertData := map[string]interface{}{
+		"fcm_token": 	fcmToken.FCMToken,
 		"user_id":         user.ID,
 		"ticker":          alertInput.TickerToMonitor,
 		"alert_price":     alertInput.AlertPrice,
 		"alert_condition": alertInput.Condition,
+
 		"active":          strconv.FormatBool(alertInput.Active),
 	}
 	val, err := app.RedisClient.HSet(ctx, alertInput.ID, alertData).Result()
@@ -161,6 +173,7 @@ func CreateStockAlert(c *gin.Context, r *gin.Engine, app *types.App) {
 	fmt.Println(alertInput.ID)
 	data["alert_id"]=alertInput.ID
 	// Send success response
+	go sse.Client(alertInput.ID, alertInput.TickerToMonitor)
 	helpers.SendResponse(c, http.StatusCreated, "Stock alert created successfully", data, nil, true)
 }
 
@@ -297,6 +310,8 @@ func UpdateActiveStatus(c *gin.Context, r *gin.Engine, app *types.App) {
 	}
 }
 
+
+// using websocket 
 func StartStockAlertMonitoring(c *gin.Context, r *gin.Engine, app *types.App){
 	ctx := context.Background()
     
@@ -314,7 +329,7 @@ func StartStockAlertMonitoring(c *gin.Context, r *gin.Engine, app *types.App){
 		helpers.SendResponse(c, http.StatusInternalServerError, "Internal server error", nil, nil, false)
 		return
 	}
-	utils.Publish(app.RedisClient, ctx, startMonitoring.TickerToMonitor, startMonitoring.AlertID)
+	// utils.Publish(app.RedisClient, ctx, startMonitoring.TickerToMonitor, startMonitoring.AlertID)
 	helpers.SendResponse(c, http.StatusOK, "Stock monitoring started successgfully", nil, nil, true)
     
 }
@@ -338,7 +353,52 @@ func StopStockAlertMonitoring(c *gin.Context, r *gin.Engine, app *types.App,hub 
 		return
 	}
 	// utils.Publish(app.RedisClient, ctx, startMonitoring.TickerToMonitor, startMonitoring.AlertID)
-	hub.UnregisterClientByAlertID(startMonitoring.AlertID)
+	// hub.UnregisterClientByAlertID(startMonitoring.AlertID)
 	helpers.SendResponse(c, http.StatusOK, "Stock monitoring started successgfully", nil, nil, true)
     
+}
+
+
+// func LoadMonitorActiveStocks(c *gin.Context, r *gin.Engine, app *types.App){
+// 	if c.Query("user_id") == "" {
+// 		helpers.SendResponse(c, http.StatusBadRequest, "User ID is required", nil, nil, false)
+// 		return
+// 	}
+// 	// ctx := context.Background()
+
+// 	activeStocks, err := models.GetAllActiveStocksByUserId(app, c.Query("user_id"))
+// 	if err != nil {
+// 		helpers.SendResponse(c, http.StatusInternalServerError, "Internal server error", nil, nil, false)
+// 		return
+// 	}
+// 	for _ ,stockAlerts := range activeStocks{
+			
+// 	}
+// 	helpers.SendResponse(c, http.StatusOK, "Active stocks loaded successfully", activeStocks, nil, true)
+// }
+func getCurrentTime() string {
+	// You can implement a function to get the current time in your desired format
+	return "2025-04-22 15:05:00 IST"
+}
+func SendFCMNotification(c *gin.Context, r *gin.Engine, app *types.App){
+	ctx := context.Background()
+
+	// var sendFCMNotification types.SendFCMNotification
+	// if !helpers.BindAndValidateJSON(c,&sendFCMNotification){
+		// 	return
+		// }
+	registrationToken:="cYvebaHvTZ2iB9q3QtJm5U:APA91bHVZEyY7ut-qZ_eNe25PmtOQKwoGTR4mxgBVSUl1MVL0zc-2img4UoobZFARkGYht5pUsz7-pABhA4GN-H63iGtlJx9f3NlT8oGsJX681ujbra9d8w"
+	message := &messaging.Message{
+		Notification: &messaging.Notification{
+			Title: "Go Backend Notification",
+			Body:  "Notification sent from the Go backend at " + getCurrentTime(),
+		},
+		Token: registrationToken,
+	}
+	response, err := app.FCMClient.Send(ctx, message)
+	if err != nil {
+		log.Fatalf("error sending message: %v", err)
+	}
+	log.Printf("Successfully sent message: %q\n", response)
+	helpers.SendResponse(c, http.StatusOK, "FCM notification sent successfully", nil, nil, true)
 }

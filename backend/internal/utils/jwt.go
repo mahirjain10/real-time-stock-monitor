@@ -4,8 +4,9 @@ import (
 	"os"
 	"time"
 
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+
 	"github.com/golang-jwt/jwt"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
 )
 
 func CreateToken(id string) (string, error) {

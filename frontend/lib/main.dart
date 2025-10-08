@@ -56,17 +56,18 @@ void setupFCMListeners() {
 }
 
 Dio setupDio() {
-  dio = Dio();
+  final dioInstance = Dio();
   cookieJar = CookieJar();
 
   // Add Cookie Manager to Dio
-  dio.interceptors.add(CookieManager(cookieJar));
+  dioInstance.interceptors.add(CookieManager(cookieJar));
 
   // Set base options
-  dio.options.baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://your-api.com';
-  dio.options.connectTimeout = const Duration(seconds: 10);
-  dio.options.receiveTimeout = const Duration(seconds: 10);
-  return dio;
+  dioInstance.options.baseUrl =
+      dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/';
+  dioInstance.options.connectTimeout = const Duration(seconds: 10);
+  dioInstance.options.receiveTimeout = const Duration(seconds: 10);
+  return dioInstance;
 }
 
 void main() async {
@@ -140,8 +141,8 @@ class MyApp extends StatelessWidget {
         ),
         initialRoute: '/login',
         routes: {
-          '/': (context) => const LoginPage(dio:dio,),
-          '/login': (context) => const LoginPage(),
+          '/': (context) => LoginPage(dio: dio),
+          '/login': (context) => LoginPage(dio: dio),
           '/dashboard': (context) => const DashboardPage(),
           '/create-alert': (context) => const CreateAlertPage(),
         },

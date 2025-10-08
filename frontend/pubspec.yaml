@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
   segmented_button_slide: ^2.0.0
   flutter_svg: ^2.0.17
-  firebase_core: ^2.24.2
-  firebase_messaging: ^14.7.10
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.5
   flutter_local_notifications: ^18.0.0
   google_fonts: ^6.2.1
   flutter_riverpod: ^2.6.1

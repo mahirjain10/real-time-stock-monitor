@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/models"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/utils"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
+	"github/mahirjain_10/sse-backend/backend/internal/models"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/websocket"
 )
 	const redisChannel    = "monitor"
 
@@ -46,7 +45,7 @@ func StartMonitoringJob(app *types.App) error {
 			log.Printf("Error saving alert to Redis: %v\n", err)
 		}
 		fmt.Printf("Monitoring stock: %s\n", stock)
-		utils.Publish(app.RedisClient, ctx, stock.TickerToMonitor, stock.ID)
+		// utils.Publish(app.RedisClient, ctx, stock.TickerToMonitor, stock.ID)
 		slog.Info("Published ")
 
 	}
@@ -90,13 +89,13 @@ func StopMonitoringJob(app *types.App, hub *websocket.Hub) {
         }
 
         // 3. Extract "alert_id" and unregister client
-        alertID, exists := result["alert_id"]
+        _, exists := result["alert_id"]
         if !exists {
             log.Printf("[StopMonitoringJob] Alert key %s missing 'alert_id'", key)
             continue
         }
 
-        hub.UnregisterClientByAlertID(alertID)
+        // hub.UnregisterClientByAlertID(alertID)
     }
 
     log.Println("[StopMonitoringJob] Monitoring stopped successfully.")

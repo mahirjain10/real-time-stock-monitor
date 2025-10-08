@@ -4,11 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github/mahirjain_10/sse-backend/backend/internal/helpers"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/utils"
+	"github/mahirjain_10/sse-backend/backend/internal/websocket"
+
 	"github.com/gin-gonic/gin"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/helpers"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/utils"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
 )
 
 func SendAlertNotification(c *gin.Context, r *gin.Engine, app *types.App,hub *websocket.Hub) {
@@ -21,7 +22,7 @@ func SendAlertNotification(c *gin.Context, r *gin.Engine, app *types.App,hub *we
 	
 	// Unregister the WebSocket client before updating the status
 	// if hub := hub.UnregisterClientByAlertID(UpdateActiveStatus; hub != nil {
-		hub.UnregisterClientByAlertID(UpdateActiveStatus.ID)
+		// hub.UnregisterClientByAlertID(UpdateActiveStatus.ID)
 	// }
 	
 	utils.UpdateActiveStatusUtil(c, ctx, UpdateActiveStatus.UserID, UpdateActiveStatus.ID, UpdateActiveStatus.Active, app)
@@ -30,6 +31,7 @@ func SendAlertNotification(c *gin.Context, r *gin.Engine, app *types.App,hub *we
 		"user_id": UpdateActiveStatus.UserID,
 		"alert_id": UpdateActiveStatus.ID,
 	}
+	
 	
 	helpers.SendResponse(c, http.StatusOK, "Alert condition met", data, nil, true)
 }

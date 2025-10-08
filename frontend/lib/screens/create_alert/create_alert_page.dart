@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/main.dart';
 import 'package:frontend/screens/create_alert/alert_label_inputbar.dart';
 import 'package:frontend/screens/create_alert/alert_preview.dart';
 import 'package:frontend/screens/create_alert/controller/create_alert_controller.dart';
@@ -42,7 +44,7 @@ class _CreateAlertPageState extends State<CreateAlertPage> {
         appBar: CreateAlertAppBar(),
         body: ChangeNotifierProvider(
           create: (context) =>
-              CreateAlertController(alertApiService: AlertApiImpl()),
+              CreateAlertController(alertApiService: AlertApiImpl(dio)),
           child: Consumer<CreateAlertController>(
             builder: (context, createAlertController, child) {
               // Show toasts when success or error messages change

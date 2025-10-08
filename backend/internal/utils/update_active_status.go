@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github/mahirjain_10/sse-backend/backend/internal/helpers"
+	"github/mahirjain_10/sse-backend/backend/internal/models"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+
 	"github.com/gin-gonic/gin"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/helpers"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/models"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	// model "github.com/mahirjain_10/stock-alert-app/backend/internal/models"
+	// model "github/mahirjain_10/sse-backend/backend/internal/models"
 )
 
 func UpdateActiveStatusUtil(c *gin.Context, ctx context.Context, userID string, alertID string, updatedStatus bool, app *types.App) bool {

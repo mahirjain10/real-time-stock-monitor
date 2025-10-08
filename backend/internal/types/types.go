@@ -1,22 +1,38 @@
 package types
 
 import (
+	"context"
 	"database/sql"
+	"sync"
 	"time"
 
-	// "github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
+	// "github/mahirjain_10/sse-backend/backend/internal/websocket"
 
-	// "github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
+	// "github/mahirjain_10/sse-backend/backend/internal/websocket"
 
-	// "github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
+	// "github/mahirjain_10/sse-backend/backend/internal/websocket"
+
+	"firebase.google.com/go/v4/messaging"
 	"github.com/golang-jwt/jwt"
 	"github.com/redis/go-redis/v9"
 )
+
+type SSEServer struct {
+	Mu               sync.RWMutex
+	ClientChan       chan string
+	ClientsMap       map[string]*chan string
+	ActiveCtxMap     map[string]context.CancelFunc
+	ActiveTickersMap map[string][]*chan string // Maps ticker to a list of clients
+	Quit             chan struct{}
+}
+
 
 // App contains the database and Redis client
 type App struct {
 	DB          *sql.DB
 	RedisClient *redis.Client
+	SSEServer *SSEServer
+	FCMClient *messaging.Client
 	// Hub *websocket.Hub
 }
 
@@ -30,6 +46,7 @@ type RegisterUser struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Password  string    `json:"password"` 
+	FcmToken string `json:"fcm_token,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
@@ -48,6 +65,7 @@ type LoginUser struct {
 	ID       string `json:"id,omitempty"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	FcmToken string `json:"fcm_token"`	
 }
 
 // -----------------------------------------
@@ -88,6 +106,7 @@ type StockAlert struct {
 	Condition  string  `json:"alert_condition"`
 	AlertPrice float64 `json:"alert_price"`
 	Active     bool    `json:"active"`
+	
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
@@ -133,6 +152,10 @@ type CustomClaims struct {
 type StockData struct {
 	Chart struct {
 		Result []struct {
+			Error struct{
+				Code string `json:"code"`
+				Description string `json:"description"`
+			} `json:"error"`
 			Indicators struct {
 				Quote []struct {
 					Close []float64 `json:"close"`
@@ -141,3 +164,15 @@ type StockData struct {
 		} `json:"result"`
 	} `json:"chart"`
 }
+
+
+// type SendFCMNotification struct{
+	
+type FCMToken struct{
+	ID string `json:"id"`
+	UserID string `json:"user_id"`
+	FCMToken string `json:"fcm_token"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+

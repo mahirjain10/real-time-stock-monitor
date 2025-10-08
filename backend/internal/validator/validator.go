@@ -3,7 +3,8 @@ package validator
 import (
 	"fmt"
 
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+
 	"github.com/rezakhademix/govalidator"
 )
 
@@ -41,6 +42,8 @@ func ValidateLoginUser(user types.LoginUser) map[string]string{
     // Password validation with min/max character limits
     v.RequiredString(user.Password, "password", "Password is required").MaxString(user.Password, 15, "password", "Password must be at most 15 characters").MinString(user.Password, 8, "password", "Password must be at least 8 characters")
     
+    // FCM Token validation
+    v.RequiredString(user.FcmToken, "fcm_token", "FCM Token is required")
     // Capture errors immediately after validation
     if v.IsFailed() {
         errors := v.Errors()

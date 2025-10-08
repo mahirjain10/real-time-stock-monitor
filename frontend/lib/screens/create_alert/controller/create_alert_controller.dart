@@ -107,24 +107,28 @@ class CreateAlertController extends ChangeNotifier {
       );
 
       if (result.success && result.data != null) {
-        debugPrint("yeah succ");
-        debugPrint("Parsed Data: ${result.data!.toString()}");
-        print("Parsed Data: ${result.data!}");
+        debugPrint("API Response successful");
+        debugPrint("Parsed Data: ${result.data.toString()}");
+
         // Update UI fields
-        currentPriceController.text =
-            result.data!.currentFetchedPrice.toString() ?? "";
-        fieldValue["currentFetchedTime"] = result.data!.currentFetchedTime;
-        successMessage =
-            "Price fetched successfully: ₹${result.data!.currentFetchedPrice}";
+        if (result.data!.currentFetchedPrice != null) {
+          currentPriceController.text =
+              result.data!.currentFetchedPrice.toString();
+          fieldValue["currentFetchedTime"] = result.data!.currentFetchedTime;
+          successMessage =
+              "Price fetched successfully: ₹${result.data!.currentFetchedPrice}";
+        } else {
+          errorMessage = "Failed to parse price data";
+        }
 
         notifyListeners();
       } else {
         errorMessage = result.message;
-        currentPriceController.text = 0.toString();
+        currentPriceController.text = "0";
         debugPrint("API Error: $errorMessage");
       }
     } catch (e) {
-      errorMessage = "Create alert failed: $e";
+      errorMessage = "Failed to fetch price: $e";
       debugPrint("Exception: $e");
     } finally {
       isGetCurrentPriceLoading = false;

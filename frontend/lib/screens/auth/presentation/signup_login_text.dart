@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/auth/presentation/login_page.dart';
 import 'package:frontend/screens/auth/presentation/signup_page.dart';
+import 'package:frontend/main.dart';
 
 class SignUpAndLoginText extends StatelessWidget {
   final VoidCallback? onTap;
@@ -28,7 +29,7 @@ class SignUpAndLoginText extends StatelessWidget {
                     : Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
+                            builder: (context) => LoginPage(dio: dio)),
                       );
               },
           child: Text(

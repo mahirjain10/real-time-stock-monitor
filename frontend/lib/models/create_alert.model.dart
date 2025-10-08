@@ -86,15 +86,13 @@ class GetCurrentPriceAndTimeModel {
   }
 
   factory GetCurrentPriceAndTimeModel.fromJson(Map<String, dynamic> json) {
+    // Handle the nested data structure
+    final nestedData = json['data'] as Map<String, dynamic>;
     return GetCurrentPriceAndTimeModel(
-        currentFetchedPrice:
-            (json["current_fetched_price"] as num?)?.toDouble(),
-        currentFetchedTime: json["current_fetched_time"]
-        // != null
-        //     ? DateFormat("dd-MM-yyyy HH:mm:ss")
-        //         .parse(json["current_fetched_time"].trim())
-        //     : null,
-        );
+      currentFetchedPrice:
+          (nestedData['current_fetched_price'] as num?)?.toDouble(),
+      currentFetchedTime: nestedData['current_fetched_time'] as String?,
+    );
   }
 
   @override

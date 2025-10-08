@@ -3,9 +3,10 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	// "github.com/mahirjain_10/stock-alert-app/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+	// "github/mahirjain_10/sse-backend/backend/internal/types"
 )
 
 // FindAlertNameByUserIDAndAlertName retrieves a stock alert by user ID and alert name.
@@ -102,6 +103,16 @@ func FindAlertNameByUserIDAndID(app *types.App, userID, alertID string) (types.S
 
 // InsertStockAlertData inserts a new stock alert record into the database.
 func InsertStockAlertData(app *types.App, stockAlertData types.StockAlert) error {
+	// Parse the current fetched time (assumed to be in '06-03-2025 20:26:16' format)
+	currentFetchedTime, err := time.Parse("02-01-2006 15:04:05", stockAlertData.CurrentFetchedTime)
+	if err != nil {
+		fmt.Printf("Error parsing date: %v\n", err)
+		return fmt.Errorf("failed to parse current fetched time: %w", err)
+	}
+
+	// Format the parsed time into the database-friendly format (YYYY-MM-DD HH:MM:SS)
+	formattedTime := currentFetchedTime.Format("2006-01-02 15:04:05")
+	
 	query := `
 	INSERT INTO stock_alert (
 		user_id, id, alert_name, ticker, 
@@ -124,7 +135,7 @@ func InsertStockAlertData(app *types.App, stockAlertData types.StockAlert) error
 		stockAlertData.AlertName,
 		stockAlertData.Ticker.TickerToMonitor,
 		stockAlertData.CurrentFetchedPrice,
-		stockAlertData.CurrentFetchedTime,
+		formattedTime,
 		stockAlertData.Condition,
 		stockAlertData.AlertPrice,
 	)
@@ -301,7 +312,73 @@ func GetAllActiveStocks(app *types.App) ([]types.StockAlert, error) {
 			fmt.Printf("Error while scanning rows: %v\n", err)
 			return nil, err
 		}
-		monitorStocks = append(monitorStocks,startMonitoring)
+		monitorStocks = append(monitorStocks, startMonitoring)
 	}
 	return monitorStocks, nil
+}
+
+
+// GetAllActiveStocksByUserId retrieves all active stock alerts for a given user ID.
+func GetAllActiveStocksByUserId(app *types.App, userID string) ([]types.StockAlert, error) {
+	var activeStocks []types.StockAlert
+
+	// query to get all the active stocks's details using user id
+	query := `
+	SELECT
+		id,
+		user_id,
+		ticker,
+		alert_condition,
+		alert_price,
+		is_active,
+		created_on,
+		updated_on
+	FROM stock_alert
+	WHERE user_id = ? AND is_active = true;
+`
+
+
+	// prepare the statement
+	stmt, err := app.DB.Prepare(query)
+	if err != nil {
+		fmt.Printf("Error preparing statement: %v\n", err)
+		return nil, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// execute the query
+	rows, err := stmt.Query(userID)
+	if err != nil {
+		fmt.Printf("Error while querying data: %v\n", err)
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stockAlert types.StockAlert
+		// var tickerToMonitor string // Temporary variable to scan ticker
+
+		err := rows.Scan(
+			&stockAlert.ID,
+			&stockAlert.UserID,
+			&stockAlert.TickerToMonitor,
+			&stockAlert.Condition,
+			&stockAlert.AlertPrice,
+			&stockAlert.Active,
+			&stockAlert.CreatedAt,
+			&stockAlert.UpdatedAt,
+		)
+		if err != nil {
+			fmt.Printf("Error scanning row: %v\n", err)
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		} // Assign the scanned ticker
+		activeStocks = append(activeStocks, stockAlert)
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Printf("Error during rows iteration: %v\n", err)
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
+
+	return activeStocks, nil
 }

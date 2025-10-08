@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/main.dart';
 import 'package:frontend/screens/auth/controller/signup_controller.dart';
 import 'package:frontend/screens/auth/presentation/signup_login_text.dart';
 import 'package:frontend/screens/auth/presentation/welcome_text.dart';
@@ -37,7 +38,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final double screenWidth = MediaQuery.sizeOf(context).width;
 
     return ChangeNotifierProvider(
-      create: (context) => SignupController(authService: AuthApiImpl()),
+      create: (context) => SignupController(authService: AuthApiImpl(dio)),
       child: Consumer<SignupController>(
         builder: (context, signupController, child) {
           return SafeArea(

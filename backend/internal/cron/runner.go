@@ -3,8 +3,9 @@ package cron
 import (
 	"time"
 
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/websocket"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/websocket"
+
 	"github.com/robfig/cron/v3"
 )
 

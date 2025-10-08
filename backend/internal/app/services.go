@@ -1,16 +1,21 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
 	"os"
 
+	"github/mahirjain_10/sse-backend/backend/internal/database"
+	"github/mahirjain_10/sse-backend/backend/internal/helpers"
+	"github/mahirjain_10/sse-backend/backend/internal/models"
+
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
 	"github.com/joho/godotenv"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/database"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/helpers"
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/models"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/api/option"
 )
 
 // InitializeServices initializes the database and Redis client
@@ -45,6 +50,11 @@ func InitializeDatabaseTables(db *sql.DB) error {
 	// Initalize monitor stock table
 	if err := models.InitializeMonitorStockTable(db); err != nil{
 		return fmt.Errorf("error creating monitor stock table: %w",err)
+	}
+	
+	// Initalize fcm token table
+	if err := models.InitializeFCMTokenTable(db); err != nil{
+		return fmt.Errorf("error creating fcm token table: %w",err)
 	}
 
 	return nil
@@ -82,3 +92,24 @@ func InitializeLogger() (*os.File,error) {
 
 
 
+
+func InitializeFCMClient() (*messaging.Client, error) {
+	ctx := context.Background()
+	opt := option.WithCredentialsFile("servicekey.json")
+
+	conf := &firebase.Config{
+		ProjectID: "stock-alert-app-d127e", // Replace with your actual Project ID
+	}
+
+	app, err := firebase.NewApp(ctx, conf, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := app.Messaging(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}

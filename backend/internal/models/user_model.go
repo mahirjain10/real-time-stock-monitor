@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/mahirjain_10/stock-alert-app/backend/internal/types"
+	"github/mahirjain_10/sse-backend/backend/internal/types"
 )
 
 // Helper function to handle query execution and error handling
@@ -44,27 +44,21 @@ func FindUserByID(app *types.App, userID string) (types.RegisterUser, error) {
 	return user, nil
 }
 
-// FindUserByEmail retrieves a user by their email
 func FindUserByEmail(app *types.App, email string) (types.RegisterUser, error) {
     stmt := `SELECT * FROM user WHERE email = ?`
     
     row, err := executeQueryRow(app, stmt, email)
     if err != nil {
-        // Handle potential errors from executing the query
         return types.RegisterUser{}, fmt.Errorf("error executing query: %w", err)
     }
 
-    // Check if any row was returned
-	// fmt.Println("row ",row.Err())
+    var user types.RegisterUser
+    err = row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt) // Modify fields as needed
 
-    if row.Err() == nil {
-		fmt.Println("59")
-        return types.RegisterUser{}, sql.ErrNoRows // Return no rows error if no user is found
-    }
-
-    user, err := scanUser(row)
-    if err != nil {
-        // Handle potential errors from scanning the row
+	fmt.Println(err)
+    if err == sql.ErrNoRows {
+        return types.RegisterUser{}, sql.ErrNoRows
+    } else if err != nil {
         return types.RegisterUser{}, fmt.Errorf("error scanning user: %w", err)
     }
 

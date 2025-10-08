@@ -26,7 +26,7 @@ class AuthApiImpl implements AuthApiService {
       LoginUserModel loginModel =
           LoginUserModel(email: email, password: password);
       String requestBody = loginModel.toJsonString();
-
+      print("Request body: $requestBody");
       final response = await dio.post(
         "/api/auth/login",
         data: requestBody,

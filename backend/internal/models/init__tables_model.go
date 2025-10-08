@@ -81,3 +81,25 @@ func InitializeMonitorStockTable(db *sql.DB) error {
 	fmt.Println("Monitor stock table created successfully!")
 	return nil
 }
+
+func InitializeFCMTokenTable(db *sql.DB) error {
+	// Query to create the monitor_stock table if it doesn't exist
+	query := `
+		CREATE TABLE IF NOT EXISTS fcm_token(
+			id VARCHAR(36) PRIMARY KEY,
+			user_id VARCHAR(36) NOT NULL,
+			fcm_token VARCHAR(255) NOT NULL,
+			created_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+		);
+	`
+	// Execute the query
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to create fcm_token table: %v", err)
+	}
+
+	fmt.Println("FCM token table created successfully!")
+	return nil
+}
