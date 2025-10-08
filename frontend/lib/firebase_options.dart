@@ -44,8 +44,8 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDvGC1LiV74XSDtMwH44vh7WxpZIKSMufo',
-    appId: '1:1070015519518:android:35b49c2983b678c0c5c70f',
+    apiKey: 
+    appId: 
     messagingSenderId: '1070015519518',
     projectId: 'stock-alert-app-d127e',
     storageBucket: 'stock-alert-app-d127e.firebasestorage.app',
