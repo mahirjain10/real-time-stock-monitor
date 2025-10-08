@@ -1,12 +1,13 @@
 # 📈 Stock Alert App
 
-A real-time stock monitoring and alert application built with Go backend and Flutter frontend. Get instant notifications when your stocks hit target prices!
+A real-time stock monitoring and alert application built with Go backend and Flutter frontend. Get instant notifications when your stocks hit target prices using **Server-Sent Events (SSE)** for real-time communication!
 
 ## 🚀 Features
 
-### Backend (Go) - ✅ **FULLY IMPLEMENTED**
+### Backend (Go) - ✅ **FULLY IMPLEMENTED WITH SSE**
+
 - **🔐 User Authentication System**: Complete registration and login with bcrypt password hashing
-- **📊 Real-time Stock Monitoring**: WebSocket-based live price updates every 2 seconds
+- **📊 Real-time Stock Monitoring**: **SSE-based** live price updates every 2 seconds
 - **🔔 Advanced Alert System**: Create, update, delete, and toggle stock alerts with multiple conditions
 - **⚡ Redis Pub/Sub Integration**: Multi-topic messaging system for instant notifications
 - **💾 Dual Database Storage**: MySQL for persistence + Redis for caching and real-time data
@@ -15,8 +16,11 @@ A real-time stock monitoring and alert application built with Go backend and Flu
 - **🎯 Smart Condition Evaluation**: Support for >, >=, ==, <, <= operators
 - **🔄 Automatic Alert Processing**: Background monitoring with automatic trigger notifications
 - **🛡️ Input Validation**: Comprehensive request validation and sanitization
+- **🚀 Server-Sent Events (SSE)**: Real-time streaming for stock price updates
+- **🔥 Firebase Cloud Messaging**: Push notifications for mobile devices
 
 ### Frontend (Flutter) - 🔄 **IN DEVELOPMENT**
+
 - **🎨 Modern Material Design 3**: Clean, professional UI with custom color scheme
 - **📱 Responsive Design**: Adaptive layout for different screen sizes
 - **🔔 Alert Creation Form**: Complete form with 4 input fields (Alert Name, Stock Name, Current Price, Alert Price)
@@ -32,7 +36,7 @@ A real-time stock monitoring and alert application built with Go backend and Flu
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Flutter App   │◄──►│   Go Backend    │◄──►│   MySQL DB      │
-│   (Frontend)    │    │   (REST API)    │    │   (Data Store)  │
+│   (Frontend)    │    │   (REST + SSE)  │    │   (Data Store)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
@@ -40,19 +44,28 @@ A real-time stock monitoring and alert application built with Go backend and Flu
                        │   Redis Cache   │
                        │   (Pub/Sub)     │
                        └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │  External Stock │
+                       │      API        │
+                       └─────────────────┘
 ```
 
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - **Go 1.22.4** - Core backend language
 - **Gin** - HTTP web framework
 - **MySQL** - Primary database
 - **Redis** - Caching and pub/sub messaging
-- **WebSocket** - Real-time communication
-- **Gorilla WebSocket** - WebSocket implementation
+- **Server-Sent Events (SSE)** - Real-time one-way communication
+- **Firebase Cloud Messaging** - Push notifications
+- **JWT** - Authentication tokens
 
 ### Frontend
+
 - **Flutter 3.4.3+** - Cross-platform UI framework
 - **Material Design 3** - Modern UI components
 - **Custom Fonts** - Poppins and WorkSans typography
@@ -67,14 +80,15 @@ Before running the application, ensure you have:
 - **MySQL 8.0+** running
 - **Redis 6.0+** running
 - **Git** for version control
+- **Firebase Project** for push notifications
 
 ## 🚀 Quick Start
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd stock-alert-app-main
+git clone https://github.com/mahirjain10/sse-stock-alert-app.git
+cd sse-stock-alert-app
 ```
 
 ### 2. Backend Setup
@@ -114,7 +128,7 @@ go mod download
 go run main.go
 ```
 
-The backend will start on `http://localhost:8080`
+The backend will start on `http://localhost:8000`
 
 ### 3. Frontend Setup
 
@@ -144,11 +158,12 @@ flutter run
 | DELETE | `/api/alert/delete-stock-alert` | Delete an alert | `{"user_id": "string", "id": "string"}` |
 | POST | `/api/alert/alert-notification` | Send alert notification (internal) | `{"user_id": "string", "id": "string", "active": "boolean"}` |
 
-### 🔌 WebSocket Endpoints
+### 🚀 Server-Sent Events (SSE) Endpoints
 
-| Endpoint | Description | Message Format |
-|----------|-------------|----------------|
-| `/ws/get-stock-price-socket` | Real-time stock price updates | `{"ticker_to_monitor": "string", "alert_id": "string", "is_active": "boolean"}` |
+| Endpoint | Description | Query Parameters | SSE Format |
+|----------|-------------|------------------|------------|
+| `/events` | Real-time stock price streaming | `alertID={uuid}&ticker={symbol}` | `data: {"price": 150.50, "time": "2025-01-08T15:30:00Z"}` |
+| `/disconnect` | Stop monitoring and disconnect SSE | `alertID={uuid}&ticker={symbol}` | JSON response |
 
 ### 📝 **API Response Format**
 ```json
@@ -282,8 +297,11 @@ go run internal/models/init__tables_model.go
 # Redis connection test
 redis-cli ping
 
+# Test SSE endpoint
+curl -N "http://localhost:8000/events?alertID=test-uuid&ticker=AAPL"
+
 # API testing with curl
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@example.com","password":"password123"}'
 ```
@@ -307,17 +325,20 @@ flutter packages pub run flutter_launcher_icons:main
 ### Project Structure
 
 ```
-stock-alert-app-main/
-├── backend/                 # Go backend application
+sse-stock-alert-app/
+├── backend/                 # Go SSE backend application
 │   ├── internal/           # Private application code
 │   │   ├── app/           # Application services
 │   │   ├── database/      # Database connections
+│   │   ├── events/        # SSE event handling
 │   │   ├── helpers/       # Utility functions
+│   │   ├── middleware/    # Authentication middleware
 │   │   ├── models/        # Data models
+│   │   ├── sse/          # SSE server and client
 │   │   ├── types/         # Type definitions
 │   │   ├── utils/         # Helper utilities
 │   │   ├── validator/     # Input validation
-│   │   └── websocket/     # WebSocket handling
+│   │   └── websocket/     # WebSocket handling (legacy)
 │   ├── web/               # HTTP handlers and routes
 │   ├── main.go           # Application entry point
 │   └── go.mod            # Go module definition
@@ -332,19 +353,22 @@ stock-alert-app-main/
 
 ## 🚧 Current Status
 
-### ✅ **Backend - COMPLETELY IMPLEMENTED**
+### ✅ **Backend - COMPLETELY IMPLEMENTED WITH SSE**
+
 - **🔐 Authentication**: Full user registration/login with bcrypt hashing
 - **📊 Stock Price API**: Real-time price fetching from external API every 2 seconds
 - **🔔 Alert Management**: Complete CRUD operations for stock alerts
-- **⚡ WebSocket Hub**: Multi-client real-time communication system
-- **🔄 Redis Pub/Sub**: Dual-channel messaging (monitor + alert-topic)
+- **🚀 SSE Hub**: Real-time streaming for stock price updates
+- **🔄 Redis Pub/Sub**: Multi-channel messaging system
 - **💾 Database Models**: 3 tables (users, stock_alert, monitor_stock)
 - **🎯 Condition Logic**: Smart price comparison with 5 operators
-- **📡 API Endpoints**: 7 fully functional REST endpoints
+- **📡 API Endpoints**: 7 fully functional REST endpoints + 2 SSE endpoints
 - **🛡️ Error Handling**: Comprehensive validation and error responses
 - **⚙️ Auto-Monitoring**: Background processes for continuous price tracking
+- **🔥 FCM Integration**: Firebase Cloud Messaging for push notifications
 
 ### 🔄 **Frontend - IN DEVELOPMENT**
+
 - **✅ UI Framework**: Complete Material Design 3 setup
 - **✅ Navigation**: Bottom tab navigation with 2 screens
 - **✅ Alert Form**: 4-input form with validation styling
@@ -352,13 +376,14 @@ stock-alert-app-main/
 - **✅ Custom Assets**: Icons, fonts, and images integrated
 - **✅ Responsive Layout**: Adaptive design for all screen sizes
 - **🔄 API Integration**: Backend connection in progress
-- **🔄 WebSocket Connection**: Real-time updates integration pending
+- **🔄 SSE Connection**: Real-time updates integration pending
 - **🔄 Alert History**: Data fetching and display logic pending
 - **🔄 Form Submission**: Backend API calls pending
 
 ### 📋 **Planned Enhancements**
+
 - 📧 Email notifications for triggered alerts
-- 📱 Push notifications for mobile devices
+- 📱 Enhanced push notifications for mobile devices
 - 📊 Interactive stock charts and graphs
 - 💼 Portfolio tracking and management
 - 🔍 Advanced search and filtering
@@ -398,14 +423,18 @@ If you have any questions or need help, please:
 ## 🎯 **What You've Built - Technical Highlights**
 
 ### 🏗️ **Backend Architecture Excellence**
+
+- **SSE-Powered**: Server-Sent Events for efficient real-time streaming
 - **Microservices-Ready**: Clean separation of concerns with modular design
-- **Real-time Engine**: WebSocket hub managing multiple concurrent connections
+- **Real-time Engine**: SSE server managing multiple concurrent connections per ticker
 - **Smart Monitoring**: Automatic price fetching every 2 seconds with condition evaluation
 - **Dual Storage Strategy**: MySQL for ACID compliance + Redis for lightning-fast caching
 - **Pub/Sub Messaging**: Multi-topic Redis channels for scalable notifications
 - **Production-Ready**: Comprehensive error handling, validation, and logging
+- **Firebase Integration**: Push notifications for mobile devices
 
 ### 🎨 **Frontend Design Innovation**
+
 - **Material Design 3**: Latest Google design system implementation
 - **Custom Components**: Segmented button slider for condition selection
 - **Responsive UI**: Adaptive layouts for all screen sizes
@@ -413,21 +442,32 @@ If you have any questions or need help, please:
 - **Asset Management**: Optimized images and icons for all platforms
 
 ### 🔧 **Advanced Technical Features**
+
 - **UUID Generation**: Secure, collision-resistant ID system
 - **Bcrypt Security**: Industry-standard password hashing
 - **Context Management**: Proper Go context handling for cancellation
 - **Connection Pooling**: Efficient database connection management
 - **Graceful Shutdowns**: Proper resource cleanup on application exit
+- **SSE Headers**: Proper `text/event-stream` headers and flushing
 
-### 📊 **Real-time Data Flow**
+### 📊 **Real-time Data Flow with SSE**
+
 ```
-External Stock API → Price Fetching → WebSocket Hub → Client Updates
+External Stock API → Price Fetching → SSE Server → Client Updates
                 ↓
-Redis Pub/Sub → Condition Evaluation → Alert Triggering → Notifications
+Redis Pub/Sub → Condition Evaluation → Alert Triggering → FCM Notifications
 ```
+
+### 🚀 **SSE Advantages Over WebSocket**
+
+- **One-way streaming**: Perfect for stock price updates
+- **Automatic reconnection**: Built-in browser support
+- **HTTP/2 compatible**: Better performance over HTTP/2
+- **Simpler implementation**: No need for complex connection management
+- **Firewall friendly**: Works through most corporate firewalls
 
 ---
 
-**🚀 Status**: Backend is production-ready with comprehensive testing. Frontend UI is complete, API integration in progress.
+**🚀 Status**: Backend is production-ready with comprehensive SSE implementation. Frontend UI is complete, SSE integration in progress.
 
 **Happy Trading! 📈**
